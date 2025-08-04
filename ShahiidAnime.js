@@ -4,31 +4,39 @@ async function searchResults(keyword) {
     const html = await res.text();
 
     const results = [];
-    const items = html.split('<article');
 
-    for (let item of items) {
-        const url = soraMatch(item, /<a[^>]+href="([^"]+)"[^>]*>/);
-        const title = soraMatch(item, /<h2[^>]*class="[^"]*title[^"]*"[^>]*>(.*?)<\/h2>/i);
-        const image = soraMatch(item, /<img[^>]+src="([^"]+)"[^>]*>/i);
+    const itemBlocks = html.match(/<div class="MovieItem">[\s\S]*?<h4>(.*?)<\/h4>[\s\S]*?<\/a>/g);
+    if (!itemBlocks) return results;
 
-        if (url && title) {
+    itemBlocks.forEach(block => {
+        const hrefMatch = block.match(/<a href="([^"]+)"/);
+        const titleMatch = block.match(/<h4>(.*?)<\/h4>/);
+        const imgMatch = block.match(/background-image:\s*url\(([^)]+)\)/);
+
+        if (hrefMatch && titleMatch && imgMatch) {
+            const href = hrefMatch[1].trim();
+            const rawTitle = decodeHTMLEntities(titleMatch[1].trim());
+            const image = imgMatch[1].trim();
+
+            const englishTitle = rawTitle.match(/[a-zA-Z0-9:.\-()]+/g)?.join(' ') || rawTitle;
+
             results.push({
-                title: decodeHTMLEntities(title),
-                url,
+                title: englishTitle.trim(),
+                url: href,
                 image
             });
         }
-    }
+    });
 
     return results;
 }
 
-// helper to decode HTML entities
 function decodeHTMLEntities(text) {
-    return text.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
-               .replace(/&quot;/g, '"')
-               .replace(/&amp;/g, '&')
-               .replace(/&lt;/g, '<')
-               .replace(/&gt;/g, '>')
-               .replace(/&#039;/g, "'");
+    return text
+        .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&apos;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
 }
