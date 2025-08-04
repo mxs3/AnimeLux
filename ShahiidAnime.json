@@ -1,18 +1,18 @@
 {
-    "sourceName": "RistoAnime",
-    "iconUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ristoanime/icon.png",
+    "sourceName": "ShahiidAnime",
+    "iconUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.png",
     "author": {
         "name": "ibro",
-        "icon": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/profile.jpg",
-        "url": "https://github.com/xibrox"
+        "icon": "https://avatars.githubusercontent.com/u/212196142?s=400&u=2456ce4be2bf64074bcf483622cfe726970025fe&v=4",
+        "url": "https://github.com/mxs3"
     },
-    "version": "2.0.0",
+    "version": "1.0.0",
     "language": "Arabic",
     "streamType": "MP4",
     "quality": "1080p",
-    "baseUrl": "https://www.mp4upload.com/",
-    "searchBaseUrl": "https://ristoanime.com/?s=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/xibrox/sora-movie-module/refs/heads/main/ristoanime/ristoanime.js",
+    "baseUrl": "https://shahiid-anime.net/",
+    "searchBaseUrl": "https://shahiid-anime.net/?s=%s",
+    "scriptUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.js",
     "type": "anime",
     "streamAsyncJS": true
 }
