@@ -1,22 +1,21 @@
 async function searchResults(keyword) {
-    const encodedKeyword = encodeURIComponent(keyword);
-    const searchUrl = `https://shahiid-anime.net/?s=${encodedKeyword}`;
-    const response = await fetchv2(searchUrl);
-    const html = await response.text();
+    const searchUrl = `https://shahiid-anime.net/?s=${encodeURIComponent(keyword)}`;
+    const res = await fetchv2(searchUrl);
+    const html = await res.text();
 
     const results = [];
-    const items = html.split('class="one-poster');
+    const items = html.split('<article');
 
-    for (const item of items) {
-        const url = soraMatch(item, /<a href="([^"]+)"/);
-        const title = soraMatch(item, /<h2><a[^>]*>(.*?)<\/a><\/h2>/);
-        const poster = soraMatch(item, /<img[^>]+src="([^"]+)"/);
+    for (let item of items) {
+        const url = soraMatch(item, /<a[^>]+href="([^"]+)"[^>]*>/);
+        const title = soraMatch(item, /<h2[^>]*class="[^"]*title[^"]*"[^>]*>(.*?)<\/h2>/i);
+        const image = soraMatch(item, /<img[^>]+src="([^"]+)"[^>]*>/i);
 
-        if (url && title && poster) {
+        if (url && title) {
             results.push({
-                title: title.trim(),
-                url: url,
-                poster: poster
+                title: decodeHTMLEntities(title),
+                url,
+                image
             });
         }
     }
@@ -24,13 +23,12 @@ async function searchResults(keyword) {
     return results;
 }
 
-// ✅ فك ترميز HTML
+// helper to decode HTML entities
 function decodeHTMLEntities(text) {
-  return text
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+    return text.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
+               .replace(/&quot;/g, '"')
+               .replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&#039;/g, "'");
 }
