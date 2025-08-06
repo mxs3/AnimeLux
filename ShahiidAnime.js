@@ -3,16 +3,30 @@ async function searchResults(keyword) {
     const url = `https://shahiid-anime.net/?s=${encodedKeyword}`;
 
     const response = await fetchv2(url, {
+        method: "GET",
+        redirect: "follow", // مهم لمتابعة التحويلات
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Referer": "https://shahiid-anime.net/"
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9,ar;q=0.8",
+            "Referer": "https://shahiid-anime.net/",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1"
         }
     });
 
-    const html = await response.text();
-    const results = [];
+    let html = await response.text();
 
-    // التقاط كل بلوك نتيجة بحث
+    // لو النص مرمز زي %3C نحوله لـ HTML عادي
+    try {
+        if (/%3C/.test(html)) {
+            html = decodeURIComponent(html);
+        }
+    } catch (e) {
+        // لو فشل التحويل نكمل باللي عندنا
+    }
+
+    const results = [];
     const items = html.match(/<div class="one-poster[\s\S]*?<\/h2>/g);
     if (!items) return results;
 
