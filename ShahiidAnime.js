@@ -20,7 +20,8 @@ async function searchResults(keyword) {
         image: m[1].trim()
     }));
 
-    return results; // Array جاهزة لسورا
+    // سورا لازم ياخد الـ array مباشرة
+    return results;
 }
 
 function decodeHTMLEntities(text) {
