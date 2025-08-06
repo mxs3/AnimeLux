@@ -12,15 +12,16 @@ async function searchResults(keyword) {
     const html = await response.text();
     const results = [];
 
-    const items = html.match(/<div class="MovieItem">[\s\S]*?<\/a>/g);
+    // التقاط كل بلوك نتيجة بحث
+    const items = html.match(/<div class="one-poster[\s\S]*?<\/h2>/g);
     if (!items) return results;
 
     for (const item of items) {
         const urlMatch = item.match(/<a href="([^"]+)"/);
-        const titleMatch = item.match(/<h4[^>]*>(.*?)<\/h4>/);
-        const imgMatch = item.match(/background-image:\s*url\(([^)]+)\)/);
+        const imgMatch = item.match(/<img[^>]+src="([^"]+)"/);
+        const titleMatch = item.match(/<h2>\s*<a[^>]*>(.*?)<\/a>\s*<\/h2>/);
 
-        if (urlMatch && titleMatch && imgMatch) {
+        if (urlMatch && imgMatch && titleMatch) {
             const href = urlMatch[1].trim();
             const rawTitle = decodeHTMLEntities(titleMatch[1].trim());
             const image = imgMatch[1].trim();
