@@ -1,8 +1,7 @@
 async function searchResults(keyword) {
     const searchUrl = `https://shahiid-anime.net/?s=${encodeURIComponent(keyword)}`;
+
     const res = await fetchv2(searchUrl, {
-        method: "GET",
-        redirect: "follow",
         headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
             "Referer": "https://shahiid-anime.net/"
@@ -12,15 +11,18 @@ async function searchResults(keyword) {
     let html = await res.text();
     if (/%3C/.test(html)) html = decodeURIComponent(html);
 
-    const results = [...html.matchAll(
-        /<div class="one-poster[\s\S]*?<img[^>]+src="([^"]+)"[^>]*>[\s\S]*?<h2>\s*<a href="([^"]+)">([^<]+)<\/a>/g
-    )].map(m => ({
-        title: m[3].trim(),
-        url: m[2].trim(),
-        image: m[1].trim()
-    }));
+    const results = [];
 
-    // سورا لازم ياخد الـ array مباشرة
+    for (const match of html.matchAll(
+        /<div class="one-poster[\s\S]*?<img[^>]+src="([^"]+)"[^>]*>[\s\S]*?<h2>\s*<a href="([^"]+)">([^<]+)<\/a>/g
+    )) {
+        results.push({
+            title: match[3].trim(),
+            url: match[2].trim(),
+            image: match[1].trim()
+        });
+    }
+
     return results;
 }
 
