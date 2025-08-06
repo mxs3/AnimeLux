@@ -14,5 +14,5 @@
     "searchBaseUrl": "https://shahiid-anime.net/?s=%s",
     "scriptUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.js",
     "type": "anime",
-    "streamAsyncJS": true
+    "asyncJS": true
 }
