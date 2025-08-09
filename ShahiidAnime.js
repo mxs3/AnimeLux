@@ -1,12 +1,10 @@
 async function searchResults(keyword) {
     try {
-        // 1. ترميز الكلمة المفتاحية
+        const baseUrl = "https://shahiid-anime.net"; // الموقع مباشرة
         const encodedKeyword = encodeURIComponent(keyword);
+        const searchUrl = `${baseUrl}/?s=${encodedKeyword}`;
 
-        // 2. تكوين رابط البحث من الدومين الأساسي
-        const searchUrl = `${DECODE_SI()}/?s=${encodedKeyword}`;
-
-        // 3. جلب الصفحة باستخدام soraFetch
+        // جلب الصفحة بهيدرز تشبه المتصفح
         const response = await soraFetch(searchUrl, {
             headers: {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
@@ -15,27 +13,28 @@ async function searchResults(keyword) {
             }
         });
 
-        const responseText = await response.text();
+        if (!response || !response.ok) {
+            throw new Error(`Request failed: ${response?.status || 'No response'}`);
+        }
 
+        const responseText = await response.text();
         const results = [];
 
-        // 4. Regex مطابق لهيكلة موقع shahiid-anime
+        // Regex لاستخراج النتائج من كروت الموقع
         const itemRegex = /<div class="one-poster[\s\S]*?<a href="([^"]+)".*?<img[^>]+src="([^"]+)"[^>]*>[\s\S]*?<h2><a[^>]*>(.*?)<\/a><\/h2>/g;
         let match;
 
-        // 5. استخراج النتائج
         while ((match = itemRegex.exec(responseText)) !== null) {
-            const href = match[1].trim();
-            const image = match[2].trim();
-            const title = decodeHTMLEntities(match[3].trim());
-            results.push({ title, href, image });
+            results.push({
+                title: decodeHTMLEntities(match[3].trim()),
+                href: match[1].trim(),
+                image: match[2].trim()
+            });
         }
 
-        // 6. إرجاع النتائج بصيغة JSON
         return JSON.stringify(results);
-
     } catch (error) {
-        console.log('Fetch error in searchResults:', error);
+        console.log('Fetch error in searchResults:', error.message);
         return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
     }
 }
