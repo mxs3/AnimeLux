@@ -1,47 +1,43 @@
 async function searchResults(keyword) {
-    // تكوين رابط البحث
-    const url = `https://shahiid-anime.net/?s=${encodeURIComponent(keyword)}`;
+    try {
+        // 1. ترميز الكلمة المفتاحية
+        const encodedKeyword = encodeURIComponent(keyword);
 
-    // جلب الصفحة بهيدر يشبه المتصفح
-    const res = await Sora.fetch(url, {
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5"
+        // 2. تكوين رابط البحث من الدومين الأساسي
+        const searchUrl = `${DECODE_SI()}/?s=${encodedKeyword}`;
+
+        // 3. جلب الصفحة باستخدام soraFetch
+        const response = await soraFetch(searchUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5"
+            }
+        });
+
+        const responseText = await response.text();
+
+        const results = [];
+
+        // 4. Regex مطابق لهيكلة موقع shahiid-anime
+        const itemRegex = /<div class="one-poster[\s\S]*?<a href="([^"]+)".*?<img[^>]+src="([^"]+)"[^>]*>[\s\S]*?<h2><a[^>]*>(.*?)<\/a><\/h2>/g;
+        let match;
+
+        // 5. استخراج النتائج
+        while ((match = itemRegex.exec(responseText)) !== null) {
+            const href = match[1].trim();
+            const image = match[2].trim();
+            const title = decodeHTMLEntities(match[3].trim());
+            results.push({ title, href, image });
         }
-    });
 
-    // تحويل الرد إلى نص HTML
-    const html = await res.text();
+        // 6. إرجاع النتائج بصيغة JSON
+        return JSON.stringify(results);
 
-    const results = [];
-
-    // البحث عن كروت الأنمي في الصفحة
-    const itemBlocks = html.match(/<div class="one-poster[\s\S]*?<\/h2>/g);
-    if (!itemBlocks) return results;
-
-    // استخراج البيانات من كل بلوك
-    itemBlocks.forEach(block => {
-        const hrefMatch = block.match(/<a href="([^"]+)"/);
-        const titleMatch = block.match(/<h2><a[^>]*>(.*?)<\/a><\/h2>/);
-        const imgMatch = block.match(/<img[^>]+src="([^"]+)"/);
-
-        if (hrefMatch && titleMatch && imgMatch) {
-            const href = hrefMatch[1].trim();
-            const rawTitle = decodeHTMLEntities(titleMatch[1].trim());
-            const image = imgMatch[1].trim();
-
-            const englishTitle = rawTitle.match(/[a-zA-Z0-9:.\-()]+/g)?.join(' ') || rawTitle;
-
-            results.push({
-                title: englishTitle.trim(),
-                image,
-                url: href
-            });
-        }
-    });
-
-    return results;
+    } catch (error) {
+        console.log('Fetch error in searchResults:', error);
+        return JSON.stringify([{ title: 'Error', image: '', href: '' }]);
+    }
 }
 
 // دالة لفك ترميز HTML entities
