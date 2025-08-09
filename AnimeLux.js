@@ -1,4 +1,5 @@
 async function searchResults(keyword) {
+  try {
   const searchUrl = `https://web.animeluxe.org/?s=${encodeURIComponent(keyword)}`;
   const res = await fetch(searchUrl, {
     headers: {
