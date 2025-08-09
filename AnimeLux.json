@@ -1,5 +1,5 @@
 {
-    "sourceName": "ShahiidAnime",
+    "sourceName": "AnimeLux",
     "iconUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.png",
     "author": {
         "name": "MXS3",
@@ -12,7 +12,7 @@
     "quality": "auto",
     "baseUrl": "https://shahiid-anime.net/",
     "searchBaseUrl": "https://shahiid-anime.net/?s=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.js",
+    "scriptUrl": "https://raw.githubusercontent.com/mxs3/AnimeLux/refs/heads/main/AnimeLux.js",
     "type": "anime",
     "asyncJS": true
 }
