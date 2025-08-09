@@ -6,10 +6,10 @@
         "icon": "https://avatars.githubusercontent.com/u/212196142?s=400&u=2456ce4be2bf64074bcf483622cfe726970025fe&v=4",
         "url": "https://github.com/mxs3"
     },
-    "version": "1.1.0",
+    "version": "1.1.1",
     "language": "Arabic",
-    "streamType": "MP4",
-    "quality": "1080p",
+    "streamType": "auto",
+    "quality": "auto",
     "baseUrl": "https://shahiid-anime.net/",
     "searchBaseUrl": "https://shahiid-anime.net/?s=%s",
     "scriptUrl": "https://raw.githubusercontent.com/mxs3/ShahiidAnime/refs/heads/main/ShahiidAnime.js",
