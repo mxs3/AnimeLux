@@ -1,35 +1,33 @@
 async function searchResults(keyword) {
   try {
-    const searchUrl = `https://web.animeluxe.org/?s=${encodeURIComponent(keyword)}`;
-    const res = await fetch(searchUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    const hasFetchV2 = typeof fetchv2 === "function";
+    async function httpGet(u) {
+      if (hasFetchV2) {
+        return await fetchv2(u, { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" });
+      } else {
+        return await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } });
       }
-    });
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
     }
-    const htmlText = await res.text();
 
-    // نستخدم DOMParser لتحويل النص لـDocument
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, "text/html");
+    const searchUrl = `https://web.animeluxe.org/?s=${encodeURIComponent(keyword)}`;
+    const res = await httpGet(searchUrl);
+    if (!res) return [];
+    const html = typeof res.text === "function" ? await res.text() : res;
 
     const results = [];
-    const cards = doc.querySelectorAll("div.search-card");
-    cards.forEach(card => {
-      const a = card.querySelector("a.image.lazyactive");
-      const imgSrc = a?.getAttribute("data-src") || a?.getAttribute("src") || "";
-      const href = a?.href || "";
-      const h3 = card.querySelector("h3");
-      const title = h3?.textContent.trim() || "";
+    // regex يلتقط كل media-block
+    const cardRegex = /<div class="search-card">[\s\S]*?<a href="([^"]+)" class="image lazyactive"[^>]*data-src="([^"]+)"[^>]*>[\s\S]*?<h3>([^<]+)<\/h3>/g;
 
-      if (href && title) {
-        results.push({ title, url: href, image: imgSrc });
-      }
-    });
+    let match;
+    while ((match = cardRegex.exec(html)) !== null) {
+      results.push({
+        title: match[3].trim(),
+        url: match[1].trim(),
+        image: match[2].trim()
+      });
+    }
+
     return results;
-
   } catch (e) {
     console.error("Search error:", e);
     return [];
