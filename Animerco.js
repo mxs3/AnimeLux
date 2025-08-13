@@ -134,134 +134,122 @@ async function extractEpisodes(url) {
 }
 
 async function extractStreamUrl(url) {
-    // ====== إعدادات عامة ======
+    // ==== Unified Headers ====
     const defaultHeaders = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Referer": url,
         "Accept": "*/*"
     };
-    const hasFetchV2 = typeof fetchv2 === "function";
 
-    async function httpGet(u, opts = {}) {
+    // ==== Helpers ====
+    async function httpGet(u, referer) {
         try {
-            if (hasFetchV2) {
-                return await fetchv2(u, opts.headers || defaultHeaders, opts.method || "GET", opts.body || null);
+            const headers = { ...defaultHeaders, Referer: referer || u };
+            if (typeof fetchv2 === "function") {
+                return await fetchv2(u, headers, "GET");
             } else {
-                return await fetch(u, { method: opts.method || "GET", headers: opts.headers || defaultHeaders, body: opts.body || null });
+                return await fetch(u, { headers });
             }
         } catch (err) {
-            console.log("httpGet error", err);
+            console.log("HTTP GET Error:", err);
             return null;
         }
     }
 
-    // ====== فك eval ======
-    function unpackEval(code) {
+    function soraMatch(regex, text) {
+        const m = text.match(regex);
+        return m ? m[1] : null;
+    }
+
+    function soraExtractMediaFromHtml(html) {
+        const videoMatch = html.match(/<video[^>]+src=["']([^"']+)["']/i);
+        return videoMatch ? videoMatch[1] : null;
+    }
+
+    // Unpack eval(function(p,a,c,k,e,d)...
+    function unpackEval(str) {
         try {
-            const m = code.match(/eval\(function\(p,a,c,k,e,d\).*?\)\)/s);
-            if (m) {
-                return eval(m[0]);
+            if (str.includes("eval(function(p,a,c,k,e,d)")) {
+                return eval(str.replace(/^eval/, ""));
             }
         } catch (e) {
-            console.log("Unpack failed", e);
+            console.log("Unpack error:", e);
         }
-        return code;
+        return str;
     }
 
-    // ====== إستخراج MP4 بالقوة ======
-    function extractMp4(html) {
-        const mp4Match = html.match(/https?:\/\/[^\s"']+\.mp4[^\s"']*/);
-        return mp4Match ? mp4Match[0] : null;
-    }
-
-    // ====== إستخراج HLS بالقوة ======
-    function extractHls(html) {
-        const hlsMatch = html.match(/https?:\/\/[^\s"']+\.m3u8[^\s"']*/);
-        return hlsMatch ? hlsMatch[0] : null;
-    }
-
-    // ====== Extractor HQQ ======
-    async function extractHQQ(embedUrl) {
-        const res = await httpGet(embedUrl);
-        if (!res) return null;
-        let html = await res.text();
-        html = unpackEval(html);
-        return extractMp4(html) || extractHls(html);
-    }
-
-    // ====== Extractor GradeHGPlus ======
-    async function extractGradeHGPlus(embedUrl) {
-        const res = await httpGet(embedUrl);
-        if (!res) return null;
-        let html = await res.text();
-        html = unpackEval(html);
-        return extractMp4(html) || extractHls(html);
-    }
-
-    // ====== Extractor Dailymotion ======
-    async function extractDailymotion(embedUrl) {
-        const res = await httpGet(embedUrl);
-        if (!res) return null;
-        const html = await res.text();
-        return extractHls(html) || extractMp4(html);
-    }
-
-    // ====== Extractor Ok.ru ======
-    async function extractOkRu(embedUrl) {
-        const res = await httpGet(embedUrl);
-        if (!res) return null;
-        const html = await res.text();
-        return extractMp4(html) || extractHls(html);
-    }
-
-    // ====== Extractor Videa ======
+    // ===== Server Extractors =====
     async function extractVidea(embedUrl) {
-        const res = await httpGet(embedUrl);
-        if (!res) return null;
+        const res = await httpGet(embedUrl, embedUrl);
         const html = await res.text();
-        return extractHls(html) || extractMp4(html);
+        const unpacked = unpackEval(html);
+        const file = soraMatch(/file\s*:\s*["']([^"']+)["']/, unpacked) || soraExtractMediaFromHtml(unpacked);
+        return file || null;
     }
 
-    // ====== قراءة صفحة الحلقة ======
-    const res = await httpGet(url);
-    if (!res) return JSON.stringify([{ title: "Error", url: "" }]);
-    const html = await res.text();
+    async function extractDailymotion(embedUrl) {
+        const res = await httpGet(embedUrl, embedUrl);
+        const html = await res.text();
+        const match = soraMatch(/"url":"(https:[^"]+mp4[^"]*)"/, html.replace(/\\u002F/g, "/"));
+        return match || null;
+    }
 
-    // ====== البحث عن iframes ======
-    const iframeMatches = [...html.matchAll(/<iframe[^>]+src=["']([^"']+)["']/g)].map(m => m[1]);
-    let streams = [];
+    async function extractStreamwish(embedUrl) {
+        const res = await httpGet(embedUrl, embedUrl);
+        const html = await res.text();
+        const unpacked = unpackEval(html);
+        const match = soraMatch(/sources\s*:\s*\[\s*\{\s*file\s*:\s*["']([^"']+)["']/, unpacked);
+        return match || null;
+    }
 
-    for (let iframeUrl of iframeMatches) {
+    async function extractMP4Upload(embedUrl) {
+        const res = await httpGet(embedUrl, embedUrl);
+        const html = await res.text();
+        const unpacked = unpackEval(html);
+        const match = soraMatch(/player\.src\(\{\s*file\s*:\s*["']([^"']+)["']/, unpacked);
+        return match || null;
+    }
+
+    async function extractUqload(embedUrl) {
+        const res = await httpGet(embedUrl, embedUrl);
+        const html = await res.text();
+        const unpacked = unpackEval(html);
+        const match = soraMatch(/sources\s*:\s*\[\s*\{\s*file\s*:\s*["']([^"']+)["']/, unpacked);
+        return match || null;
+    }
+
+    // ===== Main Process =====
+    const mainRes = await httpGet(url);
+    if (!mainRes) return JSON.stringify([{ title: "Error", image: "", href: "" }]);
+
+    const mainHtml = await mainRes.text();
+    const iframeMatches = [...mainHtml.matchAll(/<iframe[^>]+src=["']([^"']+)["']/g)].map(m => m[1]);
+
+    const servers = [];
+    for (const iframeUrl of iframeMatches) {
         let finalUrl = iframeUrl.startsWith("http") ? iframeUrl : new URL(iframeUrl, url).href;
+        let videoLink = null;
 
-        let videoSrc = null;
-        if (/hqq|netu/i.test(finalUrl)) videoSrc = await extractHQQ(finalUrl);
-        else if (/gradehgplus/i.test(finalUrl)) videoSrc = await extractGradeHGPlus(finalUrl);
-        else if (/dailymotion/i.test(finalUrl)) videoSrc = await extractDailymotion(finalUrl);
-        else if (/ok\.ru/i.test(finalUrl)) videoSrc = await extractOkRu(finalUrl);
-        else if (/videa/i.test(finalUrl)) videoSrc = await extractVidea(finalUrl);
-        else {
-            // محاولة عامة
-            const res2 = await httpGet(finalUrl);
-            if (res2) {
-                let innerHtml = await res2.text();
-                innerHtml = unpackEval(innerHtml);
-                videoSrc = extractHls(innerHtml) || extractMp4(innerHtml);
-            }
-        }
+        if (/videa\./i.test(finalUrl)) videoLink = await extractVidea(finalUrl);
+        else if (/dailymotion\./i.test(finalUrl)) videoLink = await extractDailymotion(finalUrl);
+        else if (/streamwish/i.test(finalUrl)) videoLink = await extractStreamwish(finalUrl);
+        else if (/mp4upload\.com/i.test(finalUrl)) videoLink = await extractMP4Upload(finalUrl);
+        else if (/uqload\.com/i.test(finalUrl)) videoLink = await extractUqload(finalUrl);
 
-        if (videoSrc) {
-            streams.push({
-                title: finalUrl.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/)?.[1] || "Server",
-                url: videoSrc
-            });
+        if (videoLink) {
+            servers.push({ server: finalUrl, url: videoLink });
         }
     }
 
-    if (streams.length === 0) {
-        return JSON.stringify([{ title: "No stream found", url: "" }]);
+    if (servers.length === 0) {
+        return JSON.stringify([{ title: "No Stream Found", image: "", href: "" }]);
     }
-    return JSON.stringify(streams);
+
+    // Ask user to choose server
+    const chosen = servers.length === 1 ? servers[0] : await soraPrompt("Choose a server", servers.map(s => s.server));
+    const selected = servers.length === 1 ? servers[0] : servers[chosen];
+
+    return JSON.stringify([{ title: "Stream", image: "", href: selected.url }]);
 }
 
 function decodeHTMLEntities(text) {
