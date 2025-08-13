@@ -1,7 +1,7 @@
 async function searchResults(keyword) {
     try {
         const encodedKeyword = encodeURIComponent(keyword);
-        const searchUrl = `https://go.animerco.org/?s=${encodedKeyword}`;
+        const searchUrl = `https://vip.animerco.org/?s=${encodedKeyword}`;
         const response = await fetchv2(searchUrl);
         const responseText = await response.text();
 
